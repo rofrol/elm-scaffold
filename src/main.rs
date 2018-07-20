@@ -4,6 +4,7 @@ use clap::{Arg, App};
 use std::fs;
 use std::env;
 use std::path::Path;
+use std::process::Command;
 
 fn main() -> std::io::Result<()> {
     let matches = App::new("Rget")
@@ -23,6 +24,17 @@ fn main() -> std::io::Result<()> {
 
     let root = Path::new(name);
     env::set_current_dir(&root)?;
+
+    let output = Command::new("elm")
+        .arg("package")
+        .arg("install")
+	.arg("-y")
+        .output()
+        .expect("'elm package install -y' command failed to start");
+
+    println!("status: {}", output.status);
+    println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+    println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
 
     Ok(())
 }

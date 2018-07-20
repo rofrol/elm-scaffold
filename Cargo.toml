@@ -1,0 +1,7 @@
+[package]
+name = "elm-scaffold"
+version = "0.1.0"
+authors = ["Roman Frołow <rofrol@gmail.com>"]
+
+[dependencies]
+clap = "2.32.0"

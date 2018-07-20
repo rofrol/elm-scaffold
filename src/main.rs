@@ -1,8 +1,9 @@
 extern crate clap;
 
 use clap::{Arg, App};
+use std::fs;
 
-fn main() {
+fn main() -> std::io::Result<()> {
     let matches = App::new("Rget")
         .version("0.1.0")
         .author("Roman Frołow <rofrol@gmail.com>")
@@ -15,4 +16,7 @@ fn main() {
         .get_matches();
     let name = matches.value_of("NAME").unwrap();
     println!("{}", name);
+
+    fs::create_dir(name)?;
+    Ok(())
 }

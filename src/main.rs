@@ -2,6 +2,8 @@ extern crate clap;
 
 use clap::{Arg, App};
 use std::fs;
+use std::env;
+use std::path::Path;
 
 fn main() -> std::io::Result<()> {
     let matches = App::new("Rget")
@@ -18,5 +20,9 @@ fn main() -> std::io::Result<()> {
     println!("{}", name);
 
     fs::create_dir(name)?;
+
+    let root = Path::new(name);
+    env::set_current_dir(&root)?;
+
     Ok(())
 }

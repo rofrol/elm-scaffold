@@ -1,4 +1,6 @@
 extern crate clap;
+extern crate serde;
+extern crate serde_json;
 
 use clap::{Arg, App};
 use std::fs;
@@ -28,13 +30,36 @@ fn main() -> std::io::Result<()> {
     let output = Command::new("elm")
         .arg("package")
         .arg("install")
-	.arg("-y")
+        .arg("-y")
         .output()
         .expect("'elm package install -y' command failed to start");
 
     println!("status: {}", output.status);
     println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
     println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+
+    let data = fs::read_to_string("elm-package.json").expect("Unable to read file");
+    println!("data:\n {}", data);
+
+    let the_file = r#"{
+        "FirstName": "John",
+        "LastName": "Doe",
+        "Age": 43,
+        "Address": {
+            "Street": "Downing Street 10",
+            "City": "London",
+            "Country": "Great Britain"
+        },
+        "PhoneNumbers": [
+            "+44 1234567",
+            "+44 2345678"
+        ]
+    }"#;
+
+    let json: serde_json::Value =
+        serde_json::from_str(the_file).expect("JSON was not well-formatted");
+    println!("{}", json);
+
 
     Ok(())
 }

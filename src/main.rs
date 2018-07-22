@@ -12,7 +12,7 @@ use std::path::Path;
 use std::process::Command;
 use std::collections::HashMap;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 struct ElmPackage {
     version: String,
@@ -80,6 +80,10 @@ fn main() -> std::io::Result<()> {
     let data_json: serde_json::Value =
         serde_json::from_str(&data).expect("JSON was not well-formatted");
     println!("data_json: \n{}", serde_json::to_string_pretty(&data_json).unwrap());
+
+    let data_json2 =
+        serde_json::from_str::<ElmPackage>(&data).expect("JSON was not well-formatted");
+    println!("data_json2: \n{}", serde_json::to_string_pretty(&data_json2).unwrap());
 
     Ok(())
 }

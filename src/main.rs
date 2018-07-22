@@ -10,8 +10,9 @@ use std::fs;
 use std::env;
 use std::path::Path;
 use std::process::Command;
-use std::collections::HashMap;
 
+use serde::{Serialize, Serializer};
+use std::collections::{BTreeMap, HashMap};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -22,8 +23,17 @@ struct ElmPackage {
     license: String,
     source_directories: Vec<String>,
     exposed_modules: Vec<String>,
+    #[serde(serialize_with = "ordered_map")]
     dependencies: HashMap<String, String>,
     elm_version: String,
+}
+
+fn ordered_map<S>(value: &HashMap<String, String>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let ordered: BTreeMap<_, _> = value.iter().collect();
+    ordered.serialize(serializer)
 }
 
 fn main() -> std::io::Result<()> {

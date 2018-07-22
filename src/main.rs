@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate serde_derive;
+
 extern crate clap;
 extern crate serde;
 extern crate serde_json;
@@ -7,6 +10,19 @@ use std::fs;
 use std::env;
 use std::path::Path;
 use std::process::Command;
+use std::collections::HashMap;
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "kebab-case")]
+struct ElmPackage {
+    version: String,
+    summary: String,
+    repository: String,
+    source_directories: Vec<String>,
+    exposed_modules: Vec<String>,
+    dependencies: HashMap<String, String>,
+    elm_version: String,
+}
 
 fn main() -> std::io::Result<()> {
     let matches = App::new("Rget")
@@ -38,9 +54,6 @@ fn main() -> std::io::Result<()> {
     println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
     println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
 
-    let data = fs::read_to_string("elm-package.json").expect("Unable to read file");
-    println!("data:\n {}", data);
-
     let the_file = r#"{
         "FirstName": "John",
         "LastName": "Doe",
@@ -58,8 +71,15 @@ fn main() -> std::io::Result<()> {
 
     let json: serde_json::Value =
         serde_json::from_str(the_file).expect("JSON was not well-formatted");
-    println!("{}", json);
+    println!("json: \n{}", json);
 
+
+    let data = fs::read_to_string("elm-package.json").expect("Unable to read file");
+    println!("data:\n {}", data);
+
+    let data_json: serde_json::Value =
+        serde_json::from_str(&data).expect("JSON was not well-formatted");
+    println!("data_json: \n{}", serde_json::to_string_pretty(&data_json).unwrap());
 
     Ok(())
 }

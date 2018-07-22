@@ -12,12 +12,14 @@ use std::path::Path;
 use std::process::Command;
 use std::collections::HashMap;
 
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 struct ElmPackage {
     version: String,
     summary: String,
     repository: String,
+    license: String,
     source_directories: Vec<String>,
     exposed_modules: Vec<String>,
     dependencies: HashMap<String, String>,

@@ -5,14 +5,22 @@ extern crate clap;
 extern crate serde;
 extern crate serde_json;
 
-use clap::{Arg, App};
+use clap::{App, Arg};
 use std::fs;
-use std::env;
 use std::path::Path;
 use std::process::Command;
 
 use serde::{Serialize, Serializer};
 use std::collections::{BTreeMap, HashMap};
+
+extern crate fs_extra;
+use fs_extra::dir::copy;
+use fs_extra::dir::CopyOptions;
+
+use std::fs::OpenOptions;
+use std::io::Write;
+
+use std::io::{Seek, SeekFrom};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -41,70 +49,56 @@ fn main() -> std::io::Result<()> {
         .version("0.1.0")
         .author("Roman Frołow <rofrol@gmail.com>")
         .about("Elm scaffolding in Rust")
-        .arg(Arg::with_name("NAME")
-                 .required(true)
-                 .takes_value(true)
-                 .index(1)
-                 .help("project name"))
+        .arg(
+            Arg::with_name("NAME")
+                .required(true)
+                .takes_value(true)
+                .index(1)
+                .help("project name"),
+        )
         .get_matches();
     let name = matches.value_of("NAME").unwrap();
     println!("{}", name);
 
     fs::create_dir(name)?;
 
-    let root = Path::new(name);
-    env::set_current_dir(&root)?;
+    let dst = Path::new(name);
 
     let output = Command::new("elm")
         .arg("package")
         .arg("install")
         .arg("-y")
-        .output()
-        .expect("'elm package install -y' command failed to start");
+        .current_dir(dst)
+        .output()?;
 
     println!("status: {}", output.status);
     println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
     println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
 
-    let the_file = r#"{
-        "FirstName": "John",
-        "LastName": "Doe",
-        "Age": 43,
-        "Address": {
-            "Street": "Downing Street 10",
-            "City": "London",
-            "Country": "Great Britain"
-        },
-        "PhoneNumbers": [
-            "+44 1234567",
-            "+44 2345678"
-        ]
-    }"#;
+    let mut file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(dst.join("elm-package.json"))?;
 
-    let json: serde_json::Value =
-        serde_json::from_str(the_file).expect("JSON was not well-formatted");
-    println!("json: \n{}", json);
+    let mut elm_package: ElmPackage = serde_json::from_reader(&file)?;
 
-
-    let data = fs::read_to_string("elm-package.json").expect("Unable to read file");
-    println!("data:\n {}", data);
-
-    let data_json: serde_json::Value =
-        serde_json::from_str(&data).expect("JSON was not well-formatted");
-    println!("data_json: \n{}", serde_json::to_string_pretty(&data_json).unwrap());
-
-    let mut data_json2 =
-        serde_json::from_str::<ElmPackage>(&data).expect("JSON was not well-formatted");
-
-    data_json2.source_directories = vec!["src".to_owned()];
-
-    println!("data_json2: \n{}", serde_json::to_string_pretty(&data_json2).unwrap());
+    elm_package.source_directories = vec!["src".to_owned()];
 
     let buf = Vec::new();
     let formatter = serde_json::ser::PrettyFormatter::with_indent(b"    ");
     let mut ser = serde_json::Serializer::with_formatter(buf, formatter);
-    data_json2.serialize(&mut ser).unwrap();
-    println!("data_json2 with 4 space indentation: \n{}", String::from_utf8(ser.into_inner()).unwrap());
+    elm_package.serialize(&mut ser)?;
+    let out = String::from_utf8(ser.into_inner()).unwrap();
+    println!("elm_package with 4 space indentation: \n{}", out);
+    // https://www.reddit.com/r/rust/comments/912h4l/stdfsopenoptionsnewwritetrueappendfalse_does_not/
+    file.set_len(0)?;
+    file.seek(SeekFrom::Start(0))?;
+    file.write_all(out.as_bytes())?;
+
+    let options = CopyOptions::new(); //Initialize default values for CopyOptions
+
+    let src = "templates/hello_world/src";
+    copy(&src, &dst, &options).expect("copy failed");
 
     Ok(())
 }

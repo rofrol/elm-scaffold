@@ -93,9 +93,18 @@ fn main() -> std::io::Result<()> {
         serde_json::from_str(&data).expect("JSON was not well-formatted");
     println!("data_json: \n{}", serde_json::to_string_pretty(&data_json).unwrap());
 
-    let data_json2 =
+    let mut data_json2 =
         serde_json::from_str::<ElmPackage>(&data).expect("JSON was not well-formatted");
+
+    data_json2.source_directories = vec!["src".to_owned()];
+
     println!("data_json2: \n{}", serde_json::to_string_pretty(&data_json2).unwrap());
+
+    let buf = Vec::new();
+    let formatter = serde_json::ser::PrettyFormatter::with_indent(b"    ");
+    let mut ser = serde_json::Serializer::with_formatter(buf, formatter);
+    data_json2.serialize(&mut ser).unwrap();
+    println!("data_json2 with 4 space indentation: \n{}", String::from_utf8(ser.into_inner()).unwrap());
 
     Ok(())
 }

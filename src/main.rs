@@ -6,7 +6,6 @@ extern crate serde;
 extern crate serde_json;
 
 use clap::{App, Arg};
-use std::fs;
 use std::path::Path;
 use std::process::Command;
 
@@ -14,8 +13,7 @@ use serde::{Serialize, Serializer};
 use std::collections::{BTreeMap, HashMap};
 
 extern crate fs_extra;
-use fs_extra::dir::copy;
-use fs_extra::dir::CopyOptions;
+use fs_extra::dir;
 
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -60,9 +58,13 @@ fn main() -> std::io::Result<()> {
     let name = matches.value_of("NAME").unwrap();
     println!("{}", name);
 
-    fs::create_dir(name)?;
-
     let dst = Path::new(name);
+
+    let mut dir_options = dir::CopyOptions::new();
+    dir_options.copy_inside = true;
+
+    let src = "templates/hello_world";
+    dir::copy(&src, &dst, &dir_options).expect("copy dir failed");
 
     let output = Command::new("elm")
         .arg("package")
@@ -94,11 +96,6 @@ fn main() -> std::io::Result<()> {
     file.set_len(0)?;
     file.seek(SeekFrom::Start(0))?;
     file.write_all(out.as_bytes())?;
-
-    let options = CopyOptions::new(); //Initialize default values for CopyOptions
-
-    let src = "templates/hello_world/src";
-    copy(&src, &dst, &options).expect("copy failed");
 
     Ok(())
 }

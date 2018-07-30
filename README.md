@@ -1,1 +1,1 @@
-`cargo run -- projectname`
+`cargo run -- projectname templates/templatename`

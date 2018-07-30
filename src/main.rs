@@ -18,6 +18,7 @@ use fs_extra::dir;
 use std::fs::OpenOptions;
 use std::io::Write;
 
+use std::env;
 use std::io::{Seek, SeekFrom};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -48,29 +49,47 @@ fn main() -> std::io::Result<()> {
         .author("Roman Frołow <rofrol@gmail.com>")
         .about("Elm scaffolding in Rust")
         .arg(
-            Arg::with_name("NAME")
+            Arg::with_name("PROJECT")
                 .required(true)
                 .takes_value(true)
                 .index(1)
                 .help("project name"),
         )
+        .arg(
+            Arg::with_name("TEMPLATE")
+                .required(true)
+                .takes_value(true)
+                .index(2)
+                .help("template name"),
+        )
         .get_matches();
-    let name = matches.value_of("NAME").unwrap();
-    println!("{}", name);
+    let project = matches.value_of("PROJECT").unwrap();
+    println!("project name: {}", project);
 
-    let dst = Path::new(name);
+    if Path::new(&project).exists() {
+        eprintln!("error: path {:?} exists", &project);
+        ::std::process::exit(1);
+    }
+
+    let template = matches.value_of("TEMPLATE").unwrap();
+    println!("template path: {}", template);
+
+    let root = env::var("CARGO_MANIFEST_DIR").expect("env var CARGO_MANIFEST_DIR not set?");
+
+    let dst = Path::new(&root).join(project);
 
     let mut dir_options = dir::CopyOptions::new();
     dir_options.copy_inside = true;
 
-    let src = "templates/hello_world";
+    let src = Path::new(&root).join(&template);
+    println!("{:?}", template);
     dir::copy(&src, &dst, &dir_options).expect("copy dir failed");
 
     let output = Command::new("elm")
         .arg("package")
         .arg("install")
         .arg("-y")
-        .current_dir(dst)
+        .current_dir(&dst)
         .output()?;
 
     println!("status: {}", output.status);

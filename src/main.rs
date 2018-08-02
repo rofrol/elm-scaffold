@@ -21,6 +21,8 @@ use std::io::Write;
 use std::env;
 use std::io::{Seek, SeekFrom};
 
+use std::error::Error;
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 struct ElmPackage {
@@ -43,7 +45,7 @@ where
     ordered.serialize(serializer)
 }
 
-fn main() -> std::io::Result<()> {
+fn main() -> Result<(), Box<Error>> {
     let matches = App::new("Rget")
         .version("0.1.0")
         .author("Roman Frołow <rofrol@gmail.com>")
@@ -76,14 +78,12 @@ fn main() -> std::io::Result<()> {
 
     let root = env::var("CARGO_MANIFEST_DIR").expect("env var CARGO_MANIFEST_DIR not set?");
 
-    let dst = Path::new(&root).join(project);
+    let src = Path::new(&root).join(&template);
+    let dst = Path::new(&root).join(&project);
 
     let mut dir_options = dir::CopyOptions::new();
     dir_options.copy_inside = true;
-
-    let src = Path::new(&root).join(&template);
-    println!("{:?}", template);
-    dir::copy(&src, &dst, &dir_options).expect("copy dir failed");
+    dir::copy(&src, &dst, &dir_options)?;
 
     let output = Command::new("elm")
         .arg("package")
